@@ -1,21 +1,37 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { useState, useEffect } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix default icon issue with Webpack
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// Component to expose map instance to window for testing
+function MapExposer() {
+  const map = useMap();
 
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).map = map;
+    }
+  }, [map]);
+
+  return null;
+}
 
 const Map = () => {
   const [selectedYear, setSelectedYear] = useState<number>(2024);
+
+  useEffect(() => {
+    // Fix default icon issue with Webpack (client-side only)
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    });
+  }, []);
+
   const position: [number, number] = [0, 20]; // Center of Africa
 
   // Africa bounds
@@ -72,6 +88,8 @@ const Map = () => {
         maxBounds={africaBounds}
         maxBoundsViscosity={1.0}
       >
+        <MapExposer />
+
         {/* Base layer - Satellite imagery */}
         <TileLayer
           attribution='&copy; Esri'
